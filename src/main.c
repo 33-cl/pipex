@@ -12,9 +12,43 @@
 
 #include "pipex.h"
 
-#include <stdio.h>
+/*
+ *	REMPLACER TOUTES LES FONCTIONS INTERDITES PAR LES MIENNES	
+*/
 
+
+#include <stdio.h>
 void	check_files_exists(char **argv);
+
+char	*get_path(char *command, t_pipex *pipex, char **env)
+{
+#include <string.h>
+	int	i;
+	char	*path;
+	char	**possible_paths;
+
+	i = 0;
+	while (strncmp(env[i], "PATH", 4))
+		i++;
+	possible_paths = ft_split(env[i] + 5, ':');
+	if (!possible_paths)
+		quit_error(pipex, "ft_split()\n");
+	i = -1;
+	while (i++, possible_paths[i])
+	{
+		path = malloc(sizeof(char) + ft_strlen(possible_paths[i]) + ft_strlen(command) + 2);
+		if (!path)
+			quit_error(pipex, "malloc()\n");
+		strcpy(path, possible_paths[i]);
+		strcat(path, "/");
+		strcat(path, command);
+		if (!access(path, F_OK))
+			return (free_map(possible_paths), path);
+		free(path);
+	}
+	free_map(possible_paths);
+	return (NULL);
+}
 
 int main(int argc, char **argv, char **env)
 {
@@ -41,8 +75,9 @@ int main(int argc, char **argv, char **env)
 	
 	main_pid = getpid();
 	
-
-	
+	printf("path : %s\n", get_path(argv[2], &pipex, env));
+	quit_error(&pipex, NULL);
+/*	
 	// Creation du premier processus enfant
 	pid1 = fork();
 	if (pid1 == -1)
@@ -69,7 +104,7 @@ int main(int argc, char **argv, char **env)
 	close(pipe_fd[0]);
 	close(pipe_fd[1]);
 	waitpid(pid1, NULL, 0);
-	waitpid(pid2, NULL, 0);
+	waitpid(pid2, NULL, 0);*/
 }
 
 void	check_files_exists(char **argv)
