@@ -29,9 +29,9 @@ void	quit_error(t_pipex *pipex, char *msg)
 {
 	// free everything
 	if (pipex->cmd1)
-		free_map(pipex->cmd1);
+		free(pipex->cmd1);
 	if (pipex->cmd2)
-		free_map(pipex->cmd2);
+		free(pipex->cmd2);
 		
 
 

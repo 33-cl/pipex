@@ -12,7 +12,7 @@
 
 NAME = pipex
 CC = cc
-STANDARD_FLAGS = #-Wall -Wextra -Werror
+STANDARD_FLAGS = -g3 #-Wall -Wextra -Werror
 SRC_DIR = ./src/
 SRCS_FILES 		= $(addprefix ${SRC_DIR},\
 				main.c				\
@@ -20,6 +20,9 @@ SRCS_FILES 		= $(addprefix ${SRC_DIR},\
 				ft_strlen.c			\
 				ft_split.c 			\
 				ft_bzero.c 			\
+				ft_strcat.c			\
+				ft_strcpy			\
+				ft_strncmp			\
 				)
 OBJ_FILES = $(SRCS_FILES:%.c=%.o)
 
