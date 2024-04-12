@@ -1,33 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_strcat.c                                        :+:      :+:    :+:   */
+/*   ft_strchr.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: maeferre <maeferre@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/03/26 19:29:10 by debian            #+#    #+#             */
-/*   Updated: 2024/04/10 16:39:05 by maeferre         ###   ########.fr       */
+/*   Created: 2024/04/12 03:30:16 by maeferre          #+#    #+#             */
+/*   Updated: 2024/04/12 16:46:37 by maeferre         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-char	*ft_strcat(char *dest, char *src)
+char	*ft_strchr(const char *s, int c)
 {
-	int	i;
-	int	j;
+	size_t			i;
+	unsigned char	*uc_s;
 
+	if (!s)
+		return (NULL);
 	i = 0;
-	if (src == NULL)
-		return (dest);
-	while (dest[i] != '\0')
-		i++;
-	j = 0;
-	while (src[j] != '\0')
+	uc_s = (unsigned char *)s;
+	while (uc_s[i] != (unsigned char)c)
 	{
-		dest[i + j] = src[j];
-		j++;
+		if (uc_s[i] == '\0')
+			return (NULL);
+		i++;
 	}
-	dest[i + j] = '\0';
-	return (dest);
+	return (&((char *)uc_s)[i]);
 }

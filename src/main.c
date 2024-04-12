@@ -3,121 +3,109 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: debian <debian@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maeferre <maeferre@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/17 21:34:02 by maeferre          #+#    #+#             */
-/*   Updated: 2024/03/26 19:33:24 by debian           ###   ########.fr       */
+/*   Updated: 2024/04/12 17:10:01 by maeferre         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-/*
- *	REMPLACER TOUTES LES FONCTIONS INTERDITES PAR LES MIENNES	
-*/
+void	init_n_parse(t_pipex *pipex, int argc, char **argv, char **env);
+void	cmd1_process(char **argv, t_pipex *pipex, char **env);
+void	cmd2_process(char **argv, t_pipex *pipex, char **env);
 
-// Fonctions interdites
-#include <stdio.h>
-#include <string.h>
+int	main(int argc, char **argv, char **env)
+{
+	t_pipex		pipex;
+	pid_t		pid1;
+	pid_t		pid2;
 
-void	check_files_exists(char **argv, char **env, t_pipex *pipex);
-char	*get_path(char *command, t_pipex *pipex, char **env);
+	init_n_parse(&pipex, argc, argv, env);
+	pid1 = fork();
+	if (pid1 == -1)
+		quit_n_free(&pipex, NULL, EXIT_FAILURE);
+	else if (pid1 == 0)
+	{
+		if (pipex.error)
+			quit_n_free(&pipex, NULL, EXIT_FAILURE);
+		cmd1_process(argv, &pipex, env);
+	}
+	pid2 = fork();
+	if (pid2 == -1)
+		quit_n_free(&pipex, "fork()\n", EXIT_FAILURE);
+	else if (pid2 == 0)
+		cmd2_process(argv, &pipex, env);
+	close(pipex.fd[0]);
+	close(pipex.fd[1]);
+	waitpid(pid1, NULL, 0);
+	waitpid(pid2, &pipex.status, 0);
+	quit_n_free(&pipex, NULL, pipex.status);
+}
 
-void	cmd1_process(char **argv, t_pipex *pipex, int *fd, char **env)
+void	init_n_parse(t_pipex *pipex, int argc, char **argv, char **env)
+{
+	ft_bzero(pipex, sizeof(t_pipex));
+	if (argc != 5)
+		quit_n_free(pipex, "Invalid number of arguments\n", EXIT_FAILURE);
+	pipex->error = check_files_exists(argv);
+	if (!argv[2][0])
+	{
+		write(2, "pipex : permission denied:\n", 27);
+		if (!argv[3][0])
+			exit(EXIT_FAILURE);
+	}
+	if (pipe(pipex->fd) == -1)
+		quit_n_free(pipex, "pipe()\n", EXIT_FAILURE);
+	pipex->cmd1_args = ft_split(argv[2], ' ');
+	if (!pipex->cmd1_args)
+		quit_n_free(pipex, "ft_split()\n", EXIT_FAILURE);
+	pipex->cmd2_args = ft_split(argv[3], ' ');
+	if (!pipex->cmd2_args)
+		quit_n_free(pipex, "ft_split()\n", EXIT_FAILURE);
+	pipex->cmd1 = get_command(pipex->cmd1_args[0], pipex, env);
+	pipex->cmd2 = get_command(pipex->cmd2_args[0], pipex, env);
+}
+
+void	cmd1_process(char **argv, t_pipex *pipex, char **env)
 {
 	int	infile;
 
 	infile = open(argv[1], O_RDONLY, 0777);
 	if (infile == -1)
-		quit_error(pipex, "open()\n");
-	dup2(fd[1], STDOUT_FILENO);
+		quit_n_free(pipex, "open()\n", EXIT_FAILURE);
+	dup2(pipex->fd[1], STDOUT_FILENO);
 	dup2(infile, STDIN_FILENO);
-	close(fd[0]);
-	execve(pipex->cmd1, pipex->cmd1_args, env);
+	close(pipex->fd[0]);
+	close(infile);
+	if (pipex->cmd1)
+		execve(pipex->cmd1, pipex->cmd1_args, env);
+	write(2, "pipex: command not found: ", 27);
+	write(2, argv[2], ft_strlen(argv[2]));
+	write(2, "\n", 1);
+	quit_n_free(pipex, NULL, EXIT_FAILURE);
 }
 
-void	cmd2_process(char **argv, t_pipex *pipex, int *fd, char **env)
+void	cmd2_process(char **argv, t_pipex *pipex, char **env)
 {
 	int	outfile;
 
-	outfile = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if (outfile == -1)
-		quit_error(pipex, "open()\n");
-	dup2(fd[0], STDIN_FILENO);
+	outfile = open(argv[4], O_RDWR | O_CREAT | O_TRUNC, 0000644);
+	if (outfile < 0)
+		quit_n_free(pipex, "open()\n", EXIT_FAILURE);
+	dup2(pipex->fd[0], STDIN_FILENO);
 	dup2(outfile, STDOUT_FILENO);
-	close(fd[1]);
-	execve(pipex->cmd2, pipex->cmd2_args, env);
-}
-
-int	main(int argc, char **argv, char **env)
-{
-	t_pipex		pipex;
-	int		fd[2];
-	__pid_t		pid1;
-
-	ft_bzero(&pipex, sizeof(t_pipex));
-	if (argc != 5)
-		quit_error(&pipex, "Invalid number of arguments\n");	
-	check_files_exists(argv, env, &pipex);
-	if (pipe(fd) == -1)
-		quit_error(&pipex, "pipe()\n");
-	pipex.cmd1_args = ft_split(argv[2], ' ');
-	pipex.cmd2_args = ft_split(argv[3], ' ');
-	if (!pipex.cmd1_args || !pipex.cmd2_args)
-		quit_error(&pipex, "ft_split()\n");
-	pipex.cmd1 = get_path(pipex.cmd1_args[0], &pipex, env);
-	pipex.cmd2 = get_path(pipex.cmd2_args[0], &pipex, env);
-
-	pid1 = fork();
-	if (pid1 == -1)
-		quit_error(&pipex, "fork()\n");
-	if (pid1 == 0)
-		cmd1_process(argv, &pipex, fd, env);
-	waitpid(pid1, NULL, 0);
-	cmd2_process(argv, &pipex, fd, env);
-
-	quit_error(&pipex, NULL);
-}
-
-void	check_files_exists(char **argv, char **env, t_pipex *pipex)
-{
-	// Verifie qu'il existe bien un fichier nomme "infile"
-	if (access(argv[1], F_OK) == -1)
-	{
-		write(2, "pipex: no such file or directory: ", 35);
-		write(2, argv[1], ft_strlen(argv[1]));
-		write(2, "\n", 1);
-		exit(EXIT_FAILURE);
-	}
-	if (access(argv[4], F_OK) == -1)
-		execve(get_path("touch", pipex, env), (char *[]){"touch", argv[4], NULL}, env);
-}
-
-char	*get_path(char *command, t_pipex *pipex, char **env)
-{
-	size_t	i;
-	char	*path;
-	char	**possible_paths;
-
-	i = 0;
-	while (ft_strncmp(env[i], "PATH", 4))
-		i++;
-	possible_paths = ft_split(env[i] + 5, ':');
-	if (!possible_paths)
-		quit_error(pipex, "ft_split()\n");
-	i = -1;
-	while (i++, possible_paths[i])
-	{
-		path = malloc(sizeof(char) + ft_strlen(possible_paths[i]) + ft_strlen(command) + 2);
-		if (!path)
-			quit_error(pipex, "malloc()\n");
-		ft_strcpy(path, possible_paths[i]);
-		ft_strcat(path, "/");
-		ft_strcat(path, command);
-		if (!access(path, F_OK))
-			return (free_map(possible_paths), path);
-		free(path);
-	}
-	free_map(possible_paths);
-	return (NULL);
+	close(pipex->fd[1]);
+	close(outfile);
+	write(1, pipex->cmd2, ft_strlen(pipex->cmd2));
+	write(1, "\n", 1);
+	write(1, pipex->cmd2_args[0], ft_strlen(pipex->cmd2_args[0]));
+	write(1, "\n", 1);
+	if (pipex->cmd2)
+		execve(pipex->cmd2, pipex->cmd2_args, env);
+	write(2, "pipex: command not found: ", 27);
+	write(2, argv[3], ft_strlen(argv[3]));
+	write(2, "\n", 1);
+	quit_n_free(pipex, NULL, EXIT_FAILURE);
 }

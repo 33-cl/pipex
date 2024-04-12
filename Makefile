@@ -6,23 +6,25 @@
 #    By: maeferre <maeferre@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/03/17 21:33:49 by maeferre          #+#    #+#              #
-#    Updated: 2024/03/21 15:25:53 by maeferre         ###   ########.fr        #
+#    Updated: 2024/04/12 16:58:35 by maeferre         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = pipex
 CC = cc
-STANDARD_FLAGS = -g3 #-Wall -Wextra -Werror
+STANDARD_FLAGS = -Wall -Wextra -Werror
 SRC_DIR = ./src/
 SRCS_FILES 		= $(addprefix ${SRC_DIR},\
 				main.c				\
+				utils.c 			\
 				quit_program.c 		\
 				ft_strlen.c			\
 				ft_split.c 			\
 				ft_bzero.c 			\
 				ft_strcat.c			\
-				ft_strcpy			\
-				ft_strncmp			\
+				ft_strcpy.c			\
+				ft_strncmp.c		\
+				ft_strchr.c			\
 				)
 OBJ_FILES = $(SRCS_FILES:%.c=%.o)
 

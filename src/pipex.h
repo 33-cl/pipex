@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   pipex.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: debian <debian@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maeferre <maeferre@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/17 21:34:05 by maeferre          #+#    #+#             */
-/*   Updated: 2024/03/26 19:31:05 by debian           ###   ########.fr       */
+/*   Updated: 2024/04/12 17:00:59 by maeferre         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,19 +15,30 @@
 
 # include <unistd.h>
 # include <stdlib.h>
+# include <string.h>
+# include <signal.h>
 # include <fcntl.h>
 # include <stdbool.h>
 # include <sys/wait.h>
 
 typedef struct s_pipex
 {
+	int		error;
+	int		fd[2];
 	char	**cmd1_args;
 	char	**cmd2_args;
 	char	*cmd1;
 	char	*cmd2;
+	int		status;
 }	t_pipex;
 
+// Main functions
+int		check_files_exists(char **argv);
+char	*get_command(char *command, t_pipex *pipex, char **env);
+char	*get_path(char *command, t_pipex *pipex, char **env);
+
 // Libft functions
+char	*ft_strchr(const char *s, int c);
 char	*ft_strcat(char *dest, char *src);
 char	*ft_strcpy(char *dest, char *src);
 int		ft_strncmp(char *s1, char *s2, unsigned int n);
@@ -39,6 +50,6 @@ char	*ft_substr(char const *s, unsigned int start, size_t len);
 
 // Leaving program related functions
 void	free_map(char **map);
-void	quit_error(t_pipex *pipex, char *msg);
+void	quit_n_free(t_pipex *pipex, char *msg, int status);
 
 #endif
